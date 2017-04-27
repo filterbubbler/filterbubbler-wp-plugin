@@ -51,6 +51,50 @@ function filterbubbler_cpt() {
     ));
 }
 
+// Bind functions to REST calls
+add_action( 'rest_api_init', function () {
+  register_rest_route( 'filterbubbler/v1', '/classification', array(
+    'methods' => 'GET',
+    'callback' => 'fb_list_classifications',
+  ) );
+
+  register_rest_route( 'filterbubbler/v1', '/classification/(?P<corpus>\w+)', array(
+    'methods' => 'GET',
+    'callback' => 'fb_list_classifications',
+  ) );
+
+  register_rest_route( 'filterbubbler/v1', '/corpus', array(
+    'methods' => 'GET',
+    'callback' => 'fb_list_corpura',
+  ) );
+
+  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>\w+)', array(
+    'methods' => 'GET',
+    'callback' => 'fb_list_classifications',
+  ) );
+
+  register_rest_route( 'filterbubbler/v1', '/corpus', array(
+    'methods' => 'POST',
+    'callback' => 'fb_create_corpus',
+  ) );
+
+  register_rest_route( 'filterbubbler/v1', '/classification', array(
+    'methods' => 'POST',
+    'callback' => 'fb_create_classification',
+  ) );
+
+  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>\w+)', array(
+    'methods' => 'POST',
+    'callback' => 'fb_create_classification',
+  ) );
+
+  register_rest_route( 'filterbubbler/v1', '/recipe/(?P<id>\d+)', array(
+    'methods' => 'GET',
+    'callback' => 'fb_get_recipes',
+  ) );
+} );
+
+
 /**
  * Get a list of corpura
  *
@@ -72,14 +116,6 @@ function fb_list_corpura( $data ) {
     return new WP_REST_Response($corpura, 200);
 }
 
-// Register the fb_get_corpura REST function
-add_action( 'rest_api_init', function () {
-  register_rest_route( 'filterbubbler/v1', '/corpus', array(
-    'methods' => 'GET',
-    'callback' => 'fb_list_corpura',
-  ) );
-} );
-
 /**
  * Read a corpus
  *
@@ -87,20 +123,20 @@ add_action( 'rest_api_init', function () {
  * @return string|null corpora names,  * or null if none.
  */
 function fb_read_corpus( $data ) {
-    $corpus = get_posts(array(
+    $corpus_posts = get_posts(array(
         'post_type' => 'fb_corpus',
-        'orderby' => 'title'
+        'orderby' => 'title',
+        'post_title' => $data['id']
     ));
-    return new WP_REST_Response($corpus, 200);
-}
 
-// Register the fb_get_corpura REST function
-add_action( 'rest_api_init', function () {
-  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<id>\d+)', array(
-    'methods' => 'GET',
-    'callback' => 'fb_read_corpura',
-  ) );
-} );
+    $corpura = array();
+
+    foreach ($corpus_posts as $post) {
+        array_push($corpura, array('name' => $post->post_name, 'description' => $post->post_content));
+    }
+
+    return new WP_REST_Response($corpura, 200);
+}
 
 /**
  * Create a new corpura
@@ -133,14 +169,6 @@ function fb_create_corpus( $data ) {
     ), 200);
 }
 
-// Register the fb_create_corpura REST function
-add_action( 'rest_api_init', function () {
-  register_rest_route( 'filterbubbler/v1', '/corpus', array(
-    'methods' => 'POST',
-    'callback' => 'fb_create_corpus',
-  ) );
-} );
-
 /**
  * Get a list of classifications
  *
@@ -157,7 +185,6 @@ function fb_list_classifications( $data ) {
 
     foreach($corpura_posts as $post) {
         array_push($corpura, array(
-            'corpus' => get_post_meta($post->ID, 'corpus', true),
             'url' => get_post_meta($post->ID, 'url', true),
             'classification' => get_post_meta($post->ID, 'classification', true),
         ));
@@ -168,20 +195,6 @@ function fb_list_classifications( $data ) {
         'classifications' => $corpura,
     ), 200);
 }
-
-// Register the fb_get_classifications REST function
-add_action( 'rest_api_init', function () {
-  register_rest_route( 'filterbubbler/v1', '/classification', array(
-    'methods' => 'GET',
-    'callback' => 'fb_list_classifications',
-  ) );
-
-  // With corpus
-  register_rest_route( 'filterbubbler/v1', '/classification/(?P<corpus>\w+)', array(
-    'methods' => 'GET',
-    'callback' => 'fb_list_classifications',
-  ) );
-} );
 
 /**
  * Create a new classification
@@ -223,14 +236,6 @@ function fb_create_classification( $data ) {
     ), 200);
 }
 
-// Register the fb_get_classifications REST function
-add_action( 'rest_api_init', function () {
-  register_rest_route( 'filterbubbler/v1', '/classification', array(
-    'methods' => 'POST',
-    'callback' => 'fb_create_classification',
-  ) );
-} );
-
 /**
  * Get a list of recipes
  *
@@ -241,14 +246,6 @@ function fb_get_recipes( $data ) {
     // Stub
     return null;
 }
-
-// Register the fb_get_recipes REST function
-add_action( 'rest_api_init', function () {
-  register_rest_route( 'filterbubbler/v1', '/recipe/(?P<id>\d+)', array(
-    'methods' => 'GET',
-    'callback' => 'fb_get_recipes',
-  ) );
-} );
 
 /**
  * Basic support functions
