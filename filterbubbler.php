@@ -88,7 +88,7 @@ add_action( 'rest_api_init', function () {
     'callback' => 'fb_create_classification',
   ) );
 
-  register_rest_route( 'filterbubbler/v1', '/recipe/(?P<id>\d+)', array(
+  register_rest_route( 'filterbubbler/v1', '/recipe', array(
     'methods' => 'GET',
     'callback' => 'fb_get_recipes',
   ) );
@@ -244,6 +244,18 @@ function fb_create_classification( $data ) {
  */
 function fb_get_recipes( $data ) {
     // Stub
+    $recipe_posts = get_posts(array(
+        'post_type' => 'fb_recipe',
+        'orderby' => 'title'
+    ));
+
+    $recipes = array();
+
+    foreach($recipe_posts as $post) {
+        array_push($recipes, json_decode($post->post_content));
+    }
+
+    return new WP_REST_Response($recipes, 200);
     return null;
 }
 
