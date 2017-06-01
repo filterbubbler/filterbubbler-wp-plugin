@@ -68,7 +68,7 @@ add_action( 'rest_api_init', function () {
     'callback' => 'fb_list_corpora',
   ) );
 
-  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>\w+)', array(
+  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>[\w-]+)', array(
     'methods' => 'GET',
     'callback' => 'fb_list_classifications',
   ) );
@@ -83,7 +83,7 @@ add_action( 'rest_api_init', function () {
     'callback' => 'fb_create_classification',
   ) );
 
-  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>\w+)', array(
+  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>[\w-]+)', array(
     'methods' => 'POST',
     'callback' => 'fb_create_classification',
   ) );
