@@ -178,7 +178,9 @@ function fb_create_corpus( $data ) {
 function fb_list_classifications( $data ) {
     $corpora_posts = get_posts(array(
         'post_type' => 'fb_classification',
-        'orderby' => 'title'
+        'orderby' => 'title',
+        'meta_key' => 'corpus',
+        'meta_value' => $data['corpus']
     ));
 
     $corpora = array();
@@ -256,7 +258,6 @@ function fb_get_recipes( $data ) {
     }
 
     return new WP_REST_Response($recipes, 200);
-    return null;
 }
 
 /**
