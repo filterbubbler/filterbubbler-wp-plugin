@@ -92,6 +92,11 @@ add_action( 'rest_api_init', function () {
     'methods' => 'GET',
     'callback' => 'fb_get_recipes',
   ) );
+
+  register_rest_route( 'filterbubbler/v1', '/recipe', array(
+    'methods' => 'POST',
+    'callback' => 'fb_create_recipe',
+  ) );
 } );
 
 
@@ -259,6 +264,53 @@ function fb_get_recipes( $data ) {
 
     return new WP_REST_Response($recipes, 200);
 }
+
+/**
+ * Create a recipe
+ *
+ * @param array $data Options for the function.
+ * @return string|null corpora names,  * or null if none.
+ */
+function fb_create_recipe( $data ) {
+    $recipe = $data['recipe'];
+    $classifier = $data['classifier'];
+    $corpus = $data['corpus'];
+    $source = $data['source'];
+    $sink = $data['sink'];
+
+    $body = json_encode(array(
+        'recipe-version' => '0.1',
+        'name' => $recipe,
+        'classifier' => $classifier,
+        'corpora' => $corpus,
+        'source' => $source,
+        'sink' => $sink,
+    ));
+
+    $post = array(
+      'post_type'     => 'fb_recipe',
+      'post_title'    => $recipe,
+      'post_name'     => $recipe,
+      'post_status'   => 'publish',
+      'post_content'     => $body
+    );
+
+    $existing = get_posts(array(
+        'post_type' => 'fb_recipe',
+        'title' => $recipe
+    ));
+
+    if (count($existing) > 0) {
+        error_log('Existing '.print_r($existing, true));
+        $post['ID'] = $existing[0]->ID;
+        error_log('New '.print_r($post, true));
+    }
+
+    $post_id = wp_insert_post($post);
+
+    return new WP_REST_Response($recipes, 200);
+}
+
 
 /**
  * Basic support functions
