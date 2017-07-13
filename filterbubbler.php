@@ -93,6 +93,11 @@ add_action( 'rest_api_init', function () {
     'callback' => 'fb_get_recipes',
   ) );
 
+  register_rest_route( 'filterbubbler/v1', '/recipe/(?P<recipe>[\w-]+)', array(
+    'methods' => 'GET',
+    'callback' => 'fb_get_recipe',
+  ) );
+
   register_rest_route( 'filterbubbler/v1', '/recipe', array(
     'methods' => 'POST',
     'callback' => 'fb_create_recipe',
@@ -153,10 +158,6 @@ function fb_create_corpus( $data ) {
     $corpus_name = strtolower(wp_strip_all_tags($data['title']));
     $corpus_description = wp_strip_all_tags($data['description']);
 
-    if (fb_corpus_exists($corpus_name)) {
-        return new WP_Error( 'code', 'Corpus '.$corpus_name.' already exists');
-    }
-
     // Create post object
     $post = array(
       'post_type'     => 'fb_corpus',
@@ -165,6 +166,19 @@ function fb_create_corpus( $data ) {
       'post_content'  => $corpus_description,
       'post_status'   => 'publish'
     );
+
+    $existing = get_posts(array(
+        'post_type' => 'fb_corpus',
+        'name' => $name
+    ));
+
+    if (count($existing) > 0) {
+        $post['ID'] = $existing[0]->ID;
+    }
+
+    foreach ($data['classifications'] as $classification) {
+        fb_create_classification($classification);
+    }
      
     // Insert the post into the database
     $post_id = wp_insert_post( $post );
@@ -263,6 +277,26 @@ function fb_get_recipes( $data ) {
     }
 
     return new WP_REST_Response($recipes, 200);
+}
+
+/**
+ * Get a single recipe
+ *
+ * @param array $data Options for the function.
+ * @return string|null recipe
+ */
+function fb_get_recipe( $data ) {
+    // Stub
+    $recipe_posts = get_posts(array(
+        'post_type' => 'fb_recipe',
+        'orderby' => 'title',
+        'name' => $data['recipe']
+    ));
+
+    $recipe = json_decode($recipe_posts[0]->post_content);
+    error_log('RECIPE '.print_r($recipe, true));
+
+    return new WP_REST_Response($recipe, 200);
 }
 
 /**
