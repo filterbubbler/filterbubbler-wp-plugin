@@ -68,7 +68,7 @@ add_action( 'rest_api_init', function () {
     'callback' => 'fb_list_corpora',
   ) );
 
-  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>[\w-]+)', array(
+  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>[\w-% ]+)', array(
     'methods' => 'GET',
     'callback' => 'fb_list_classifications',
   ) );
@@ -83,7 +83,7 @@ add_action( 'rest_api_init', function () {
     'callback' => 'fb_create_classification',
   ) );
 
-  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>[\w-]+)', array(
+  register_rest_route( 'filterbubbler/v1', '/corpus/(?P<corpus>[\w-% ]+)', array(
     'methods' => 'POST',
     'callback' => 'fb_create_classification',
   ) );
@@ -93,7 +93,7 @@ add_action( 'rest_api_init', function () {
     'callback' => 'fb_get_recipes',
   ) );
 
-  register_rest_route( 'filterbubbler/v1', '/recipe/(?P<recipe>[\w-]+)', array(
+  register_rest_route( 'filterbubbler/v1', '/recipe/(?P<recipe>[\w-% ]+)', array(
     'methods' => 'GET',
     'callback' => 'fb_get_recipe',
   ) );
@@ -120,7 +120,7 @@ function fb_list_corpora( $data ) {
     $corpora = array();
 
     foreach ($corpus_posts as $post) {
-        array_push($corpora, array('name' => $post->post_name, 'description' => $post->post_content));
+        array_push($corpora, array('name' => $post->post_title, 'description' => $post->post_content));
     }
 
     return new WP_REST_Response($corpora, 200);
@@ -155,7 +155,7 @@ function fb_read_corpus( $data ) {
  * @return string|null corpora names,  * or null if none.
  */
 function fb_create_corpus( $data ) {
-    $corpus = strtolower(wp_strip_all_tags($data['corpus']));
+    $corpus = wp_strip_all_tags($data['corpus']);
 
     // Create post object
     $post = array(
@@ -167,7 +167,7 @@ function fb_create_corpus( $data ) {
 
     $existing = get_posts(array(
         'post_type' => 'fb_corpus',
-        'name' => $name
+        'title' => $corpus
     ));
 
     if (count($existing) > 0) {
@@ -201,25 +201,26 @@ function fb_create_corpus( $data ) {
  * @return string|null corpora names,  * or null if none.
  */
 function fb_list_classifications( $data ) {
-    $corpora_posts = get_posts(array(
+    $corpus = urldecode($data['corpus']);
+    $classification_posts = get_posts(array(
         'post_type' => 'fb_classification',
         'orderby' => 'title',
         'meta_key' => 'corpus',
-        'meta_value' => $data['corpus']
+        'meta_value' => $corpus
     ));
 
-    $corpora = array();
+    $classifications = array();
 
-    foreach($corpora_posts as $post) {
-        array_push($corpora, array(
+    foreach($classification_posts as $post) {
+        array_push($classifications, array(
             'url' => get_post_meta($post->ID, 'url', true),
             'classification' => get_post_meta($post->ID, 'classification', true),
         ));
     }
 
     return new WP_REST_Response(array(
-        'corpus' => $data['corpus'],
-        'classifications' => $corpora,
+        'corpus' => $corpus,
+        'classifications' => $classifications,
     ), 200);
 }
 
@@ -230,8 +231,8 @@ function fb_list_classifications( $data ) {
  * @return string|null corpora names,  * or null if none.
  */
 function fb_create_classification( $data ) {
-    $corpus = strtolower(wp_strip_all_tags($data['corpus']));
-    $classification = strtolower(wp_strip_all_tags($data['classification']));
+    $corpus = wp_strip_all_tags($data['corpus']);
+    $classification = wp_strip_all_tags($data['classification']);
     $url = wp_strip_all_tags($data['url']);
 
     if (!fb_corpus_exists($corpus)) {
