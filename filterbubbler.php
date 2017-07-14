@@ -155,15 +155,13 @@ function fb_read_corpus( $data ) {
  * @return string|null corpora names,  * or null if none.
  */
 function fb_create_corpus( $data ) {
-    $corpus_name = strtolower(wp_strip_all_tags($data['title']));
-    $corpus_description = wp_strip_all_tags($data['description']);
+    $corpus = strtolower(wp_strip_all_tags($data['corpus']));
 
     // Create post object
     $post = array(
       'post_type'     => 'fb_corpus',
-      'post_title'    => wp_strip_all_tags($data['title']),
-      'post_name'     => $corpus_name,
-      'post_content'  => $corpus_description,
+      'post_title'    => $corpus,
+      'post_name'     => $corpus,
       'post_status'   => 'publish'
     );
 
@@ -176,8 +174,16 @@ function fb_create_corpus( $data ) {
         $post['ID'] = $existing[0]->ID;
     }
 
-    foreach ($data['classifications'] as $classification) {
-        fb_create_classification($classification);
+    $classifications = $data['classifications'];
+    foreach (array_keys($classifications) as $classification) {
+        $urls = $classifications[$classification];
+        foreach ($urls as $url) {
+            fb_create_classification(array(
+                'corpus' => $corpus,
+                'classification' => $classification,
+                'url' => $url
+            ));
+        }
     }
      
     // Insert the post into the database
